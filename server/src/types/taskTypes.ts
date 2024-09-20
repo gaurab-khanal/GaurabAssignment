@@ -24,3 +24,15 @@ export interface ITask extends Document {
     isDeleted: boolean;
     softDelete: () => Promise<void>;
 }
+
+export enum SortBy{
+    CreatedAt = 'createdAt',
+    DueDate = 'dueDate',
+    status = 'status',
+    priority = 'priority',
+}
+
+export enum SortOrder{
+    Asc = 'asc',
+    Desc = 'desc',
+}

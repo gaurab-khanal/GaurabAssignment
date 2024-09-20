@@ -3,7 +3,7 @@ import { Task } from "../models/task";
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { asyncHandler } from "../utils/AsyncHandler";
-import { taskSchema } from "../validation/task.validation";
+import { filterSortTaskSchema, taskSchema } from "../validation/task.validation";
 import e, { Request, Response } from "express";
 
 const createTask = asyncHandler(async (req: Request, res: Response) => {
@@ -87,7 +87,7 @@ const deleteTask = asyncHandler(async (req: Request, res: Response) => {
         throw new ApiError(404, "Task ID is missing or invalid");
     }
 
-    const task = await Task.findOne({ _id: taskId , isDeleted: false , user: req.user._id });
+    const task = await Task.findOne({ _id: taskId, isDeleted: false, user: req.user._id });
 
     if (!task) {
         throw new ApiError(404, "Task not found");
@@ -102,4 +102,54 @@ const deleteTask = asyncHandler(async (req: Request, res: Response) => {
 
 });
 
-export { createTask, editTask, deleteTask };
+const getTasks = asyncHandler(async (req: Request, res: Response) => {
+
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const { status, priority, dueDateStart, dueDateEnd, sortBy, sortOrder, page = 1, limit = 10 } = req.query;
+
+    const object = {
+        status,
+        priority,
+        dueDateStart,
+        dueDateEnd,
+        sortBy,
+        sortOrder,
+        page,
+        limit
+    }
+
+    // validate data using zod
+    const validatedData = filterSortTaskSchema.parse(object);
+
+    // filter object
+    const filter: any = {
+        isDeleted: false,
+        user: req.user._id
+    };
+    
+    if (status) filter.status = status;
+    if (priority) filter.priority = priority;
+
+    // useful to fetch task based on dueDate between two dates
+    if (dueDateStart || dueDateEnd) {
+        filter.dueDate = {};
+        
+        if(dueDateStart) filter.dueDate.$gte = new Date( dueDateStart as string);
+        if(dueDateEnd) filter.dueDate.$lte = new Date( dueDateEnd as string);
+
+    }
+
+
+    const tasks = await Task.find(filter);
+
+    return res.status(200)
+        .json(
+            new ApiResponse(200, tasks, "Tasks retrieved successfully")
+        )
+
+});
+
+export { createTask, editTask, deleteTask, getTasks };
