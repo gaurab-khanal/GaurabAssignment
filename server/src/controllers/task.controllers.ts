@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Task } from "../models/task";
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
@@ -34,4 +35,44 @@ const createTask = asyncHandler(async (req: Request, res: Response) => {
 
 });
 
-export { createTask };
+const editTask = asyncHandler(async (req: Request, res: Response) => {
+
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const taskId: any = req.params.id;
+    
+    if (!(mongoose.Types.ObjectId.isValid(taskId))) {
+        throw new ApiError(404, "Task ID is missing or invalid");
+    }
+
+    const body = req.body;
+
+    // validate data using zod
+    const validatedData = taskSchema.parse(body);
+
+    const task = await Task.findById({ _id: taskId });
+    console.log("Task updated successfully");
+
+    if (!task) {
+        throw new ApiError(404, "Task not found");
+    }
+
+    task.title = validatedData.title;
+    task.description = validatedData.description;
+    task.status = validatedData.status;
+    task.priority = validatedData.priority;
+    task.dueDate = validatedData.dueDate;
+    
+
+    await task.save();
+
+    return res.status(200)
+        .json(
+            new ApiResponse(200, task, "Task updated successfully")
+        )
+
+});
+
+export { createTask, editTask };
