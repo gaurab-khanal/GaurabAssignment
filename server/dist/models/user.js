@@ -13,6 +13,7 @@ const userSchema = new mongoose_1.Schema({
         type: String,
         required: [true, "Please provide your name"],
         maxLength: [50, "Your name cannot exceed 50 characters"],
+        minlength: [3, "Name should be at least 3 character long.."],
         trim: true,
     },
     email: {
@@ -26,7 +27,7 @@ const userSchema = new mongoose_1.Schema({
     password: {
         type: String,
         required: [true, "Please provide a password"],
-        minlength: 6,
+        minlength: [6, "Password must be at least 6 character"],
     },
 }, { timestamps: true });
 userSchema.pre("save", async function (next) {
@@ -43,5 +44,10 @@ userSchema.methods.getJwtToken = function () {
     return jsonwebtoken_1.default.sign({ id: this._id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRY
     });
+};
+userSchema.methods.toJSON = function () {
+    const userObject = this.toObject();
+    delete userObject.password;
+    return userObject;
 };
 exports.User = (0, mongoose_1.model)("User", userSchema);

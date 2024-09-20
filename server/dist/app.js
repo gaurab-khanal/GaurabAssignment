@@ -19,4 +19,31 @@ app.use((0, cookie_parser_1.default)());
 app.get('/healthcheck', (req, res) => {
     res.send('Hello World');
 });
+// route imports
+const user_routes_1 = __importDefault(require("./routes/user.routes"));
+const zod_1 = require("zod");
+const FormatZodError_1 = require("./utils/FormatZodError");
+const ApiError_1 = require("./utils/ApiError");
+// route declarations
+app.use("/api/v1/auth", user_routes_1.default);
+// error handler
+app.use((err, req, res, next) => {
+    if (err instanceof zod_1.ZodError) {
+        const formattedError = (0, FormatZodError_1.formatZodError)(err);
+        return res.status(422).json({
+            success: formattedError.success,
+            message: formattedError.message,
+            errors: formattedError.errors,
+            data: formattedError.data,
+        });
+    }
+    else if (err instanceof ApiError_1.ApiError) {
+        res.status(err.statusCode).json({
+            success: err.success,
+            message: err.message,
+            errors: err.errors,
+            data: err.data,
+        });
+    }
+});
 exports.default = app;
