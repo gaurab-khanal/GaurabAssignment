@@ -22,4 +22,5 @@ export interface ITask extends Document {
     updatedAt: Date;
     user: mongoose.Types.ObjectId;
     isDeleted: boolean;
+    softDelete: () => Promise<void>;
 }

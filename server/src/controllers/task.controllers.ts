@@ -42,7 +42,7 @@ const editTask = asyncHandler(async (req: Request, res: Response) => {
     }
 
     const taskId: any = req.params.id;
-    
+
     if (!(mongoose.Types.ObjectId.isValid(taskId))) {
         throw new ApiError(404, "Task ID is missing or invalid");
     }
@@ -64,7 +64,7 @@ const editTask = asyncHandler(async (req: Request, res: Response) => {
     task.status = validatedData.status;
     task.priority = validatedData.priority;
     task.dueDate = validatedData.dueDate;
-    
+
 
     await task.save();
 
@@ -75,4 +75,31 @@ const editTask = asyncHandler(async (req: Request, res: Response) => {
 
 });
 
-export { createTask, editTask };
+const deleteTask = asyncHandler(async (req: Request, res: Response) => {
+
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const taskId: string = req.params.id;
+
+    if (!(mongoose.Types.ObjectId.isValid(taskId))) {
+        throw new ApiError(404, "Task ID is missing or invalid");
+    }
+
+    const task = await Task.findOne({ _id: taskId , isDeleted: false , user: req.user._id });
+
+    if (!task) {
+        throw new ApiError(404, "Task not found");
+    }
+
+    await task.softDelete();
+
+    return res.status(200)
+        .json(
+            new ApiResponse(200, task, "Task deleted successfully")
+        )
+
+});
+
+export { createTask, editTask, deleteTask };
