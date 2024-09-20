@@ -4,6 +4,11 @@ import cookieParser from 'cookie-parser';
 import "dotenv/config";
 import { limiter } from './utils/rateLimit';
 
+import { ZodError } from 'zod';
+import { formatZodError } from './utils/FormatZodError';
+import { ApiError } from './utils/ApiError';
+import { Error } from 'mongoose';
+
 const app: Application = express();
 const allowedOrigins = process.env.CORS_ORIGIN?.split(",") || ["http://localhost:3000"];
 
@@ -28,16 +33,14 @@ app.get('/healthcheck', (req: Request, res: Response) => {
 
 // route imports
 import userRouter from "./routes/user.routes";
-import { ZodError } from 'zod';
-import { formatZodError } from './utils/FormatZodError';
-import { ApiError } from './utils/ApiError';
+import taskRouter from "./routes/task.routes";
 
 
 
 
 // route declarations
 app.use("/api/v1/auth", userRouter);
-
+app.use("/api/v1/task", taskRouter);
 
 // error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

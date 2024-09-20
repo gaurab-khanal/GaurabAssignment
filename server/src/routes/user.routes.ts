@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { checkAuth, login, logout, signup } from "../controllers/user.controllers";
 import { verifyJwt } from "../middleware/auth.middleware";
-import { limiter } from "../utils/rateLimit";
 
 const router = Router();
 
