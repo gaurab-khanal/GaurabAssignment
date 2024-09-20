@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse";
 import { asyncHandler } from "../utils/AsyncHandler";
 import { filterSortTaskSchema, taskSchema } from "../validation/task.validation";
 import e, { Request, Response } from "express";
+import { priorityOrder, statusOrder } from "../constants";
 
 const createTask = asyncHandler(async (req: Request, res: Response) => {
 
@@ -108,7 +109,7 @@ const getTasks = asyncHandler(async (req: Request, res: Response) => {
         throw new ApiError(401, "Unauthorized");
     }
 
-    const { status, priority, dueDateStart, dueDateEnd, sortBy, sortOrder, page = 1, limit = 10 } = req.query;
+    const { status, priority, dueDateStart, dueDateEnd, sortBy, sortOrder = "asc", page = 1, limit = 2 } = req.query;
 
     const object = {
         status,
@@ -117,37 +118,97 @@ const getTasks = asyncHandler(async (req: Request, res: Response) => {
         dueDateEnd,
         sortBy,
         sortOrder,
-        page,
-        limit
     }
 
     // validate data using zod
-    const validatedData = filterSortTaskSchema.parse(object);
+    filterSortTaskSchema.parse(object);
 
     // filter object
     const filter: any = {
         isDeleted: false,
         user: req.user._id
     };
-    
+
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
 
     // useful to fetch task based on dueDate between two dates
     if (dueDateStart || dueDateEnd) {
         filter.dueDate = {};
-        
-        if(dueDateStart) filter.dueDate.$gte = new Date( dueDateStart as string);
-        if(dueDateEnd) filter.dueDate.$lte = new Date( dueDateEnd as string);
+
+        if (dueDateStart) filter.dueDate.$gte = new Date(dueDateStart as string);
+        if (dueDateEnd) filter.dueDate.$lte = new Date(dueDateEnd as string);
 
     }
 
+    // sort object
 
-    const tasks = await Task.find(filter);
+    let sort: any = {};
+
+    if (sortBy && sortOrder) {
+        sort[sortBy as string] = sortOrder === "asc" ? 1 : -1;
+    } else {
+        sort.createdAt = -1; // default sort createdAt in descending order
+    }
+
+    // pagination
+    const skip = (Number(page) - 1) * Number(limit);
+
+
+    const tasks = await Task.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(Number(limit))
+        .collation({ locale: 'en', strength: 2 });;
+
+
+    // sorting by priority or status manually sorting based on priority or status order mentioned in constants.ts
+    if (sortBy === 'priority' || sortBy === 'status') {
+        tasks.sort((a, b) => {
+            let compareValue;
+
+            if (sortBy === 'priority') {
+                compareValue = priorityOrder[a.priority] - priorityOrder[b.priority];
+            } else {
+                compareValue = statusOrder[a.status] - statusOrder[b.status];
+            }
+
+            // sorting order
+            compareValue = sortOrder === 'asc' ? compareValue : -compareValue;
+
+            // if compareValue is 0 then sort based on createdAt date
+            if (compareValue !== 0) {
+                return compareValue;
+            }
+
+            return (a.createdAt.getTime() || 0) - (b.createdAt.getTime() || 0);
+
+        })
+    }
+
+    // calculate pagination infos
+
+    const totalTask = await Task.countDocuments(filter);
+    const totalPages = Math.ceil(totalTask / Number(limit));
+    const hasNextPage = Number(page) < totalPages;
+    const hasPrevPage = Number(page) > 1;
+
+    const paginationInfo = {
+        totalTask,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        currentPage: Number(page),
+        limit: Number(limit)
+    }
+
 
     return res.status(200)
         .json(
-            new ApiResponse(200, tasks, "Tasks retrieved successfully")
+            new ApiResponse(200, {
+                tasks,
+                ...paginationInfo
+            }, "Tasks retrieved successfully")
         )
 
 });
