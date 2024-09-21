@@ -44,7 +44,7 @@ const login = asyncHandler(async (req: Request, res: Response) => {
     const userExists = await User.findOne({ email: validatedData.email.toLowerCase() });
 
     if (!userExists) {
-        throw new ApiError(404, "User doesnot exists");
+        throw new ApiError(404, "User does not exists");
     }
 
     // check if password is correct
@@ -52,7 +52,7 @@ const login = asyncHandler(async (req: Request, res: Response) => {
 
 
     if (!passwordMatch) {
-        throw new ApiError(401, "Password donot match");
+        throw new ApiError(401, "Password does not match");
     }
 
     sendCookieToken(res, userExists, "User logged in successfully", 200);
@@ -86,7 +86,7 @@ const checkAuth = asyncHandler(async (req: Request, res: Response) => {
   
     return res.status(200)
       .json(
-        new ApiResponse(200, {}, "User is authenticated.")
+        new ApiResponse(200, req?.user, "User is authenticated.")
       )
   
   });

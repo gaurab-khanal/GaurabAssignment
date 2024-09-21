@@ -1,5 +1,5 @@
 "use client"
-import { Button } from "@/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
     Form,
     FormControl,
@@ -7,16 +7,14 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@/app/components/ui/form";
+import { Input } from "@/app/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Separator } from "@/components/ui/separator";
-// import { useAppDispatch } from "@/redux/hooks";
-// import { setToken } from "@/redux/features/authReducer";
+import { Separator } from "@/app/components/ui/separator";
 import Link from "next/link";
 import { loginSchema } from "@/schema/Auth";
 import { toast } from "@/hooks/use-toast";
@@ -36,8 +34,6 @@ export default function LoginForm() {
 
     const router = useRouter();
 
-    // const dispatch = useAppDispatch();
-
     const onSubmit = async (data: loginFormValue) => {
         try {
             setLoading(true);
@@ -47,7 +43,8 @@ export default function LoginForm() {
             if (res.status === 200) {
                 toast({
                     variant: "default",
-                    description: "Successfully Logged In!",
+                    description: res?.data?.message,
+                    duration: 1000
                 });
                 router.push("/dashboard");   
             }
@@ -56,6 +53,7 @@ export default function LoginForm() {
             toast({
                 variant: "destructive",
                 description: error?.response?.data?.message || error?.message,
+                duration: 1000,
             });
         } finally {
             setLoading(false);
@@ -68,7 +66,7 @@ export default function LoginForm() {
                 <h1 className="text-2xl font-semibold tracking-tight">
                     Log in to your Account
                 </h1>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-black text-muted-foreground">
                     Welcome to Taskify!
                 </p>
             </div>

@@ -1,5 +1,5 @@
 "use client"
-import { Button } from "@/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
     Form,
     FormControl,
@@ -7,20 +7,19 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@/app/components/ui/form";
+import { Input } from "@/app/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Separator } from "@/components/ui/separator";
-// import { loginApi } from "@/lib/api/auth/auth";
-// import { useAppDispatch } from "@/redux/hooks";
-// import { setToken } from "@/redux/features/authReducer";
+import { Separator } from "@/app/components/ui/separator";
 import Link from "next/link";
 import { signupSchema } from "@/schema/Auth";
 import { toast } from "@/hooks/use-toast";
+import {  signupApi } from "@/lib/api/auth/auth";
+import { useRouter } from "next/navigation";
 
 type signupFormValue = z.infer<typeof signupSchema>;
 
@@ -28,30 +27,32 @@ export default function SignupForm() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
+
     const form = useForm<signupFormValue>({
         resolver: zodResolver(signupSchema),
     });
 
-    // const dispatch = useAppDispatch();
-
     const onSubmit = async (data: signupFormValue) => {
         try {
             setLoading(true);
-            //   const res = await loginApi(data);
+          
+              const res = await signupApi(data);
 
-            // if (res.status === 200) {
-            //     // dispatch(setToken(res.data.token));
-            // }
-            toast({
-                variant: "default",
-                description: "Successfully Logged In!",
-            });
-
-            //   window.location.href = "/choose-org";
+            if (res.status === 201) {
+                toast({
+                    variant: "default",
+                    description: res.data.message,
+                    duration: 1000,
+                });
+                router.push("/dashboard");   
+            }
         } catch (error: any) {
+
             toast({
                 variant: "destructive",
-                description: error?.response?.data?.error || error?.message,
+                description: error?.response?.data?.message || error?.message,
+                duration: 1000,
             });
         } finally {
             setLoading(false);
@@ -64,7 +65,7 @@ export default function SignupForm() {
                 <h1 className="text-2xl font-semibold tracking-tight">
                     Create an account
                 </h1>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm  text-black text-muted-foreground">
                     Welcome to Taskify!
                 </p>
             </div>
@@ -82,7 +83,7 @@ export default function SignupForm() {
                                 <FormLabel>Name</FormLabel>
                                 <FormControl>
                                     <Input
-                                        type="email"
+                                        type="text"
                                         placeholder="Enter your name..."
                                         disabled={loading}
                                         {...field}
@@ -190,7 +191,7 @@ export default function SignupForm() {
                             <div>
                                 Already have an account?
                             </div>
-                            <Link href={"/login"} className="hover:underline">
+                            <Link href={"/"} className="hover:underline">
                                 Login
                             </Link>
                         </div>
